@@ -1,6 +1,7 @@
 # Prometheus P1 exporter #
 
-Prometheus exporter for smart meter statistics fetched with a P1 cable.
+Prometheus exporter for smart meter statistics fetched with a P1 cable.   
+This fork has improved prometheus metric names.
 
 
 ## Installation ##
@@ -52,39 +53,39 @@ By default the exporter will collect metrics from `/dev/ttyUSB0` every 10 second
 Example metrics page:
 
 ```
-# HELP p1_active_tariff Active tariff
+# HELP p1_active_tariff 96.14.0 - Active tariff
 # TYPE p1_active_tariff gauge
-p1_active_tariff 2
-# HELP p1_current_usage_electricity_high Electricity currently used high tariff
-# TYPE p1_current_usage_electricity_high gauge
-p1_current_usage_electricity_high 0
-# HELP p1_current_usage_electricity_low Electricity currently used low tariff
-# TYPE p1_current_usage_electricity_low gauge
-p1_current_usage_electricity_low 0.2
-# HELP p1_power_failures_long Power failures long
+p1_active_tariff 1
+# HELP p1_actual_electricity_consumption 1.7.0 - Actual electricity power consumption in kW
+# TYPE p1_actual_electricity_consumption gauge
+p1_actual_electricity_consumption 0.279
+# HELP p1_actual_electricity_production 2.7.0 - Actual electricity power production in kW
+# TYPE p1_actual_electricity_production gauge
+p1_actual_electricity_production 0
+# HELP p1_consumption_electricity_high 1.8.1 - Electricity consumption high tariff in kWh
+# TYPE p1_consumption_electricity_high counter
+p1_consumption_electricity_high 10878.601
+# HELP p1_consumption_electricity_low 1.8.2 - Electricity consumption low tariff in kWh
+# TYPE p1_consumption_electricity_low counter
+p1_consumption_electricity_low 10026.591
+# HELP p1_consumption_gas 24.2.1 - Gas usage in m³
+# TYPE p1_consumption_gas counter
+p1_consumption_gas 5262.398
+# HELP p1_power_failures_long 96.7.9 - Power failures long count
 # TYPE p1_power_failures_long gauge
-p1_power_failures_long 2
-# HELP p1_power_failures_short Power failures short
+p1_power_failures_long 3
+# HELP p1_power_failures_short 96.7.21 - Power failures short count
 # TYPE p1_power_failures_short gauge
-p1_power_failures_short 57
-# HELP p1_returned_electricity_high Electricity returned high tariff
-# TYPE p1_returned_electricity_high gauge
-p1_returned_electricity_high 0
-# HELP p1_returned_electricity_low Electricity returned low tariff
-# TYPE p1_returned_electricity_low gauge
-p1_returned_electricity_low 0.016
-# HELP p1_usage_electricity_high Electricity usage high tariff
-# TYPE p1_usage_electricity_high gauge
-p1_usage_electricity_high 1225.59
-# HELP p1_usage_electricity_low Electricity usage low tariff
-# TYPE p1_usage_electricity_low gauge
-p1_usage_electricity_low 1179.186
-# HELP p1_usage_gas Gas usage
-# TYPE p1_usage_gas gauge
-p1_usage_gas 1019.003
+p1_power_failures_short 1
+# HELP p1_production_electricity_high 2.8.1 - Electricity production high tariff in kWh
+# TYPE p1_production_electricity_high counter
+p1_production_electricity_high 359.608
+# HELP p1_production_electricity_low 2.8.2 - Electricity production low tariff in kWh
+# TYPE p1_production_electricity_low counter
+p1_production_electricity_low 152.981
 ```
 
 ## Development ##
 
-Currently only the ESMR 5.0 format is supported and the parser is default configured to parse the telegram message with the keys the Sagemcom XS210 is using.
-If you have to support a different ESMR 5.0 message, feel free to create your own implementation of the TelegramFormat struct. To support a different format then ESMR 5.0 you can implement your own implementation of the TelegramReaderOptions struct.
+Currently only the DSMR 5.0 format is supported and the parser is default configured to parse the telegram message with the keys the Sagemcom XS210 is using.
+If you have to support a different DSMR 5.0 message, feel free to create your own implementation of the TelegramFormat struct. To support a different format then DSMR 5.0 you can implement your own implementation of the TelegramReaderOptions struct.

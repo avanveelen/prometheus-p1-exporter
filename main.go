@@ -23,60 +23,60 @@ var metricNamePrefix = "p1_"
 var usbSerial string
 
 var (
-	registry                   = prometheus.NewRegistry()
-	electricityUsageHighMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "usage_electricity_high",
-		Help: "Electricity usage high tariff",
+	registry                         = prometheus.NewRegistry()
+	electricityConsumptionHighMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: metricNamePrefix + "consumption_electricity_high",
+		Help: "1.8.1 - Electricity consumption high tariff in kWh",
 	})
-	electricityUsageLowMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "usage_electricity_low",
-		Help: "Electricity usage low tariff",
+	electricityConsumptionLowMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: metricNamePrefix + "consumption_electricity_low",
+		Help: "1.8.2 - Electricity consumption low tariff in kWh",
 	})
-	electricityReturnedHighMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "returned_electricity_high",
-		Help: "Electricity returned high tariff",
+	electricityProductionHighMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: metricNamePrefix + "production_electricity_high",
+		Help: "2.8.1 - Electricity production high tariff in kWh",
 	})
-	electricityReturnedLowMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "returned_electricity_low",
-		Help: "Electricity returned low tariff",
+	electricityProductionLowMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: metricNamePrefix + "production_electricity_low",
+		Help: "2.8.2 - Electricity production low tariff in kWh",
 	})
-	actualElectricityDeliveredMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "actual_electricity_delivered",
-		Help: "Actual electricity power delivered to client",
+	actualElectricityConsumptionMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: metricNamePrefix + "actual_electricity_consumption",
+		Help: "1.7.0 - Actual electricity power consumption in kW",
 	})
-	actualElectricityRetreivedMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "actual_electricity_retreived",
-		Help: "Actual electricity power retreived from client",
+	actualElectricityProductionMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: metricNamePrefix + "actual_electricity_production",
+		Help: "2.7.0 - Actual electricity power production in kW",
 	})
-	activeTarrifMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+	activeTariffMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: metricNamePrefix + "active_tariff",
-		Help: "Active tariff",
+		Help: "96.14.0 - Active tariff",
 	})
 	powerFailuresLongMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: metricNamePrefix + "power_failures_long",
-		Help: "Power failures long",
+		Help: "96.7.9 - Power failures long count",
 	})
 	powerFailuresShortMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: metricNamePrefix + "power_failures_short",
-		Help: "Power failures short",
+		Help: "96.7.21 - Power failures short count",
 	})
-	gasUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: metricNamePrefix + "usage_gas",
-		Help: "Gas usage",
+	gasConsumptionMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: metricNamePrefix + "consumption_gas",
+		Help: "24.2.1 - Gas usage in m³",
 	})
 )
 
 func init() {
-	registry.MustRegister(electricityUsageHighMetric)
-	registry.MustRegister(electricityUsageLowMetric)
-	registry.MustRegister(electricityReturnedHighMetric)
-	registry.MustRegister(electricityReturnedLowMetric)
-	registry.MustRegister(actualElectricityDeliveredMetric)
-	registry.MustRegister(actualElectricityRetreivedMetric)
-	registry.MustRegister(activeTarrifMetric)
+	registry.MustRegister(electricityConsumptionHighMetric)
+	registry.MustRegister(electricityConsumptionLowMetric)
+	registry.MustRegister(electricityProductionHighMetric)
+	registry.MustRegister(electricityProductionLowMetric)
+	registry.MustRegister(actualElectricityConsumptionMetric)
+	registry.MustRegister(actualElectricityProductionMetric)
+	registry.MustRegister(activeTariffMetric)
 	registry.MustRegister(powerFailuresLongMetric)
 	registry.MustRegister(powerFailuresShortMetric)
-	registry.MustRegister(gasUsageMetric)
+	registry.MustRegister(gasConsumptionMetric)
 }
 
 func main() {
@@ -104,6 +104,10 @@ func main() {
 
 	go func() {
 		errorCount := 0
+
+		// Initialize variables to store the last cumulative values
+		var lastElectricityUsageHigh, lastElectricityUsageLow, lastElectricityReturnedHigh, lastElectricityReturnedLow, lastGasUsage float64
+
 		for {
 			if errorCount > 10 {
 				logrus.Errorln("Quitting because there were too many errors")
@@ -125,30 +129,55 @@ func main() {
 				continue
 			}
 			errorCount = 0
+
+			// Update counters with differences from last readings for cumulative values
 			if telegram.ElectricityUsageHigh != nil {
-				electricityUsageHighMetric.Set(*telegram.ElectricityUsageHigh)
+				diff := *telegram.ElectricityUsageHigh - lastElectricityUsageHigh
+				if diff > 0 {
+					electricityConsumptionHighMetric.Add(diff)
+					lastElectricityUsageHigh = *telegram.ElectricityUsageHigh
+				}
 			}
 			if telegram.ElectricityUsageLow != nil {
-				electricityUsageLowMetric.Set(*telegram.ElectricityUsageLow)
+				diff := *telegram.ElectricityUsageLow - lastElectricityUsageLow
+				if diff > 0 {
+					electricityConsumptionLowMetric.Add(diff)
+					lastElectricityUsageLow = *telegram.ElectricityUsageLow
+				}
 			}
 			if telegram.ElectricityReturnedHigh != nil {
-				electricityReturnedHighMetric.Set(*telegram.ElectricityReturnedHigh)
+				diff := *telegram.ElectricityReturnedHigh - lastElectricityReturnedHigh
+				if diff > 0 {
+					electricityProductionHighMetric.Add(diff)
+					lastElectricityReturnedHigh = *telegram.ElectricityReturnedHigh
+				}
 			}
 			if telegram.ElectricityReturnedLow != nil {
-				electricityReturnedLowMetric.Set(*telegram.ElectricityReturnedLow)
+				diff := *telegram.ElectricityReturnedLow - lastElectricityReturnedLow
+				if diff > 0 {
+					electricityProductionLowMetric.Add(diff)
+					lastElectricityReturnedLow = *telegram.ElectricityReturnedLow
+				}
 			}
+			if telegram.GasUsage != nil {
+				diff := *telegram.GasUsage - lastGasUsage
+				if diff > 0 {
+					gasConsumptionMetric.Add(diff)
+					lastGasUsage = *telegram.GasUsage
+				}
+			}
+
+			// Update gauges directly for instantaneous values
 			if telegram.ActualElectricityDelivered != nil {
-				actualElectricityDeliveredMetric.Set(*telegram.ActualElectricityDelivered)
+				actualElectricityConsumptionMetric.Set(*telegram.ActualElectricityDelivered)
 			}
 			if telegram.ActualElectricityRetreived != nil {
-				actualElectricityRetreivedMetric.Set(*telegram.ActualElectricityRetreived)
+				actualElectricityProductionMetric.Set(*telegram.ActualElectricityRetreived)
 			}
-			activeTarrifMetric.Set(float64(telegram.ActiveTariff))
+
+			activeTariffMetric.Set(float64(telegram.ActiveTariff))
 			powerFailuresLongMetric.Set(float64(telegram.PowerFailuresLong))
 			powerFailuresShortMetric.Set(float64(telegram.PowerFailuresShort))
-			if telegram.GasUsage != nil {
-				gasUsageMetric.Set(*telegram.GasUsage)
-			}
 
 			logrus.Debugf("%+v\n", telegram)
 
